@@ -1,9 +1,9 @@
-import { useAuth } from '../context/AuthContext.jsx';
-import { useLists } from '../context/ListsContext.jsx';
+import { Form, useRouteLoaderData } from 'react-router';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
-  const { watched, wantToWatch } = useLists();
+  const { user, entries } = useRouteLoaderData('routes/app');
+  const watched = entries.filter((e) => e.status === 'watched');
+  const wantToWatch = entries.filter((e) => e.status === 'want_to_watch');
 
   return (
     <div className="screen">
@@ -27,9 +27,11 @@ export default function Profile() {
         </div>
       </div>
 
-      <button className="btn btn--danger" onClick={logout}>
-        Log Out
-      </button>
+      <Form method="post" action="/logout">
+        <button type="submit" className="btn btn--danger">
+          Log Out
+        </button>
+      </Form>
     </div>
   );
 }

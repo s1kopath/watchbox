@@ -4,12 +4,13 @@ A mobile-app-like PWA for tracking movies you've watched and want to watch.
 Search pulls real movie data (posters, ratings, descriptions) from TMDB;
 your lists are stored per-account in a free cloud SQLite database (Turso).
 
-- **Frontend**: React + Vite, installable as a PWA (works offline for the UI,
-  looks/feels like a native mobile app with a bottom tab bar)
-- **Backend**: Vercel serverless functions (`/api`)
+- **Framework**: [React Router v7](https://reactrouter.com/) in framework mode
+  (SSR) — a single app that serves both the UI and its server data loaders,
+  installable as a PWA with a native-app-like bottom tab bar
 - **Database**: [Turso](https://turso.tech) — SQLite-compatible, free tier
 - **Movie data**: [TMDB API](https://www.themoviedb.org/documentation/api) (key kept server-side, never exposed to the browser)
-- **Auth**: email/password with JWT, so multiple people can each have their own lists
+- **Auth**: email/password with an httpOnly session cookie, so multiple people can each have their own lists
+- **Deploy**: [Vercel](https://vercel.com) via the `@vercel/react-router` preset (loaders/actions run as serverless functions)
 
 ## 1. Get a free TMDB API key
 
@@ -25,8 +26,8 @@ your lists are stored per-account in a free cloud SQLite database (Turso).
 4. Get the connection URL: `turso db show moviebox --url`
 5. Create an auth token: `turso db tokens create moviebox`
 
-You don't need to create tables manually — the API creates them automatically
-on first request (`api/_db.js`).
+You don't need to create tables manually — the app creates them automatically
+on first request (`app/lib/db.server.js`).
 
 ## 3. Configure environment variables
 
@@ -43,50 +44,26 @@ TURSO_AUTH_TOKEN=your_turso_token
 JWT_SECRET=any_long_random_string
 ```
 
-Generate a `JWT_SECRET` quickly with: `openssl rand -hex 32`
+`JWT_SECRET` signs the httpOnly login session cookie. Generate one with:
+`openssl rand -hex 32`
 
 ## 4. Run locally
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-You need two things running for full local dev (frontend + API):
-
-```bash
-# Terminal 1 - serves the /api functions on port 3000 (no Vercel account needed)
-npm run dev:api
-
-# Terminal 2 - Vite dev server with HMR, proxies /api to port 3000
 npm run dev
 ```
 
-Open the URL Vite prints (usually http://localhost:5173).
+Open the URL it prints (usually http://localhost:5173). That's it — **one
+command, one server**. The UI and the server-side loaders/actions run together;
+there's no separate API process or proxy to start. The dev server reads `.env`
+automatically (via `dotenv` in `vite.config.js`).
 
-`npm run dev:api` runs `scripts/dev-server.mjs`, a small zero-dependency
-server that calls the exact same `api/**/*.js` handler files Vercel runs in
-production — it just doesn't require linking/logging into a Vercel account
-to do it locally.
-
-> **If you get a 502 on any `/api/...` request**, it almost always means
-> nothing is listening on port 3000 — i.e. you forgot to start
-> `npm run dev:api` in a second terminal, or it crashed on startup (check
-> that terminal's output, and that `.env` exists with real values).
-
-If you specifically need to test Vercel's own routing/rewrites before
-deploying (e.g. debugging `vercel.json`), you can use
-`npm run dev:api:vercel` instead, which runs the real `vercel dev` CLI — but
-that does require a Vercel account and project link.
-
-### Offline smoke test (no accounts needed)
-
-`scripts/test-api-local.mjs` exercises the auth + list API handlers directly
-against a temporary local SQLite file — no Turso or Vercel account required:
+To test the production build locally:
 
 ```bash
-node scripts/test-api-local.mjs
+npm run build
+npm start
 ```
 
 ## 5. Deploy to Vercel (free)
@@ -98,7 +75,8 @@ vercel                  # first deploy, follow the prompts
 vercel --prod           # promote to production
 ```
 
-Then add your environment variables in the Vercel dashboard
+Vercel detects the React Router framework automatically (no `vercel.json`
+needed). Then add your environment variables in the Vercel dashboard
 (Project → Settings → Environment Variables), or via CLI:
 
 ```bash
@@ -116,37 +94,35 @@ Once deployed, open the site on your phone:
 - **Android (Chrome)**: menu → "Install app" / "Add to Home screen"
 - **iOS (Safari)**: Share → "Add to Home Screen"
 
-It will launch full-screen with its own icon, just like a native app.
+It launches full-screen with its own icon. Posters are cached for offline
+viewing; note the app shell itself still needs a connection to load (see the
+PWA note in `AGENTS.md`).
 
 ## Project structure
 
 ```
-api/                  Vercel serverless functions
-  _db.js              Turso client + schema setup
-  _auth.js            JWT sign/verify helpers
-  auth/register.js    POST /api/auth/register
-  auth/login.js       POST /api/auth/login
-  movies/search.js    GET  /api/movies/search?q=
-  movies/trending.js  GET  /api/movies/trending
-  lists/index.js      GET/POST /api/lists
-  lists/[id].js        PATCH/DELETE /api/lists/:id
+app/
+  root.jsx             HTML shell, service-worker registration, error boundary
+  routes.js            route table
+  index.css            all styling
+  lib/                 server modules (db, session/auth, tmdb, list ops) + useListActions hook
+  routes/              login, register, logout, lists (action), app (protected layout),
+                       search (index), watched, want-to-watch, profile
+  components/          MovieCard, BottomNav, EntryList
 
-src/
-  api/client.js        fetch wrapper (attaches JWT, base /api paths)
-  context/             Auth + Lists React context providers
-  components/          MovieCard, BottomNav
-  pages/               Login, Register, Search, MyList, Profile
-
-scripts/
-  icon-source.svg       source art for the app icon
-  generate-icons.mjs    regenerates public/*.png from the SVG (needs `sharp`)
-  test-api-local.mjs    offline smoke test for the API handlers
+public/                manifest.webmanifest, sw.js, generated *.png icons
+react-router.config.js SSR + Vercel preset
+vite.config.js         React Router plugin + .env loading
+scripts/               icon-source.svg + generate-icons.mjs (icon regeneration)
 ```
+
+See `AGENTS.md` for a deeper explanation of how data flows (loaders, the
+`/lists` action, and loader revalidation).
 
 ## Regenerating app icons
 
-Icons in `public/` were generated once from `scripts/icon-source.svg`. If you
-want to change the icon, edit that SVG, then:
+Icons in `public/` were generated once from `scripts/icon-source.svg`. To
+change the icon, edit that SVG, then:
 
 ```bash
 npm install -D sharp
