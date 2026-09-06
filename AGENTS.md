@@ -86,16 +86,34 @@ never invent or guess values for them.
 | ------------------------------------- | ------------------------------------------------------------------------------ |
 | `npm install`                         | install deps                                                                    |
 | `npm run dev`                         | Vite dev server (frontend only), proxies `/api/*` to `localhost:3000`          |
-| `npm run dev:api`                     | `vercel dev --listen 3000` — serves the `/api` functions locally               |
+| `npm run dev:api`                     | `node scripts/dev-server.mjs` — serves `/api` locally, **no Vercel account needed** |
+| `npm run dev:api:vercel`              | real `vercel dev --listen 3000` — only for testing Vercel's own routing/rewrites before deploy |
 | `npm run build`                       | `vite build` — also generates the PWA service worker via vite-plugin-pwa       |
 | `node scripts/test-api-local.mjs`     | **offline** smoke test of every `api/` handler, no accounts/network needed     |
 
-**Prefer `node scripts/test-api-local.mjs` over `npm run dev:api` for
-verifying API changes.** It runs the actual handler functions against a
-throwaway local SQLite file (`file:./scripts/.tmp-test.db`, auto-cleaned up)
-and finishes in under a second. `vercel dev` is heavier and may prompt for
-Vercel account login/linking on first run — only reach for it if you
-actually need to test through real HTTP requests.
+**Prefer `node scripts/test-api-local.mjs`** for verifying API changes — it
+runs the actual handler functions against a throwaway local SQLite file
+(`file:./scripts/.tmp-test.db`, auto-cleaned up) and finishes in under a
+second, no server needed at all.
+
+**`npm run dev:api` (`scripts/dev-server.mjs`)** is a small zero-dependency
+Node `http` server that routes requests to the exact same `api/**/*.js`
+files Vercel calls in production, using the same file-based routing
+(`[id].js` dynamic segments, `index.js` = folder root, `_foo.js` ignored).
+Use this — not `vercel dev` — when you need to click through the actual UI
+locally. It reads `.env` itself (simple built-in parser, no `dotenv` dep).
+
+**If `/api/...` requests return a raw 502** while running `npm run dev`, it
+means nothing is listening on port 3000 — `npm run dev:api` isn't running,
+crashed on startup, or `.env` is missing/incomplete. This is Vite's proxy
+reporting "upstream unreachable", not an error from our API code (our
+handlers always catch their own errors and return JSON with a proper status,
+never a bare 502).
+
+Only reach for `npm run dev:api:vercel` (the real Vercel CLI) if you
+specifically need to verify `vercel.json` rewrites or other Vercel-specific
+behavior before deploying — it requires linking/logging into a Vercel
+account, which needs the user's explicit go-ahead (see rules below).
 
 ## Gotchas / conventions
 

@@ -56,8 +56,8 @@ npm install
 You need two things running for full local dev (frontend + API):
 
 ```bash
-# Terminal 1 - serves the /api serverless functions on port 3000
-npx vercel dev --listen 3000
+# Terminal 1 - serves the /api functions on port 3000 (no Vercel account needed)
+npm run dev:api
 
 # Terminal 2 - Vite dev server with HMR, proxies /api to port 3000
 npm run dev
@@ -65,9 +65,20 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173).
 
-> The first time you run `vercel dev` it may ask you to log in / link the
-> project — that's the Vercel CLI's normal setup flow for your own account,
-> not something this codebase does automatically.
+`npm run dev:api` runs `scripts/dev-server.mjs`, a small zero-dependency
+server that calls the exact same `api/**/*.js` handler files Vercel runs in
+production — it just doesn't require linking/logging into a Vercel account
+to do it locally.
+
+> **If you get a 502 on any `/api/...` request**, it almost always means
+> nothing is listening on port 3000 — i.e. you forgot to start
+> `npm run dev:api` in a second terminal, or it crashed on startup (check
+> that terminal's output, and that `.env` exists with real values).
+
+If you specifically need to test Vercel's own routing/rewrites before
+deploying (e.g. debugging `vercel.json`), you can use
+`npm run dev:api:vercel` instead, which runs the real `vercel dev` CLI — but
+that does require a Vercel account and project link.
 
 ### Offline smoke test (no accounts needed)
 

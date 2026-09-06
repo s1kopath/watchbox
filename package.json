@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "vercel dev --listen 3000",
+    "dev:api": "node scripts/dev-server.mjs",
+    "dev:api:vercel": "vercel dev --listen 3000",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
