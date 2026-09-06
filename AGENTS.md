@@ -138,6 +138,9 @@ proxy, and no `scripts/dev-server.mjs` any more.
 
 ## Rules for agents working in this repo
 
+- **Never commit automatically.** Do the work, verify it, then stop and let the
+  user review. Only run `git commit` when the user explicitly asks for it — do
+  not commit as a side effect of completing a task.
 - Never run commands that log into or link third-party accounts (`vercel
   login`, `vercel link`, `turso auth login`, `gh auth login`, etc.) without the
   user explicitly asking. (Codified in `opencode.json` as `"ask"`.)

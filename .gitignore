@@ -16,6 +16,9 @@ dist-ssr
 .react-router/
 build/
 
+# Smoke test temp DB
+scripts/.tmp-smoke.db*
+
 # Vercel
 .vercel
 
