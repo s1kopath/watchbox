@@ -1,4 +1,4 @@
-# MovieList
+# MovieBox
 
 A mobile-app-like PWA for tracking movies you've watched and want to watch.
 Search pulls real movie data (posters, ratings, descriptions) from TMDB;
@@ -21,9 +21,9 @@ your lists are stored per-account in a free cloud SQLite database (Turso).
 
 1. Install the Turso CLI: `curl -sSfL https://get.tur.so/install.sh | bash`
 2. Sign up / log in: `turso auth signup` (or `turso auth login`)
-3. Create a database: `turso db create movie-list`
-4. Get the connection URL: `turso db show movie-list --url`
-5. Create an auth token: `turso db tokens create movie-list`
+3. Create a database: `turso db create moviebox`
+4. Get the connection URL: `turso db show moviebox --url`
+5. Create an auth token: `turso db tokens create moviebox`
 
 You don't need to create tables manually — the API creates them automatically
 on first request (`api/_db.js`).
@@ -38,7 +38,7 @@ cp .env.example .env
 
 ```
 TMDB_API_KEY=your_tmdb_key
-TURSO_DATABASE_URL=libsql://movie-list-yourname.turso.io
+TURSO_DATABASE_URL=libsql://moviebox-yourname.turso.io
 TURSO_AUTH_TOKEN=your_turso_token
 JWT_SECRET=any_long_random_string
 ```

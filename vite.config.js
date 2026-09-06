@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon-32.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'MovieList - Watched & Want to Watch',
-        short_name: 'MovieList',
+        name: 'MovieBox - Watched & Want to Watch',
+        short_name: 'MovieBox',
         description: 'Track movies you have watched and want to watch',
         theme_color: '#0f1115',
         background_color: '#0f1115',

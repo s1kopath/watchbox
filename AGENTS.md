@@ -1,4 +1,4 @@
-# MovieList
+# MovieBox
 
 A PWA for tracking movies you've watched and want to watch. Multi-user
 (email/password), movie data pulled from TMDB, lists stored per-user in a

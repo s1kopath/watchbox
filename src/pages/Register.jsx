@@ -28,7 +28,7 @@ export default function Register() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-logo">🎬</div>
-        <h1>MovieList</h1>
+        <h1>MovieBox</h1>
         <p className="auth-subtitle">Create your account</p>
 
         <form onSubmit={handleSubmit} className="auth-form">

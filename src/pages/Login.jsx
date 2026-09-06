@@ -28,7 +28,7 @@ export default function Login() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-logo">🎬</div>
-        <h1>MovieList</h1>
+        <h1>MovieBox</h1>
         <p className="auth-subtitle">Track what you've watched and what's next</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
