@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git push*": "ask",
+      "git commit --amend*": "ask",
+      "vercel login*": "ask",
+      "vercel link*": "ask",
+      "vercel --prod*": "ask",
+      "vercel deploy*": "ask",
+      "vercel env *": "ask",
+      "turso auth*": "ask",
+      "turso db tokens*": "ask",
+      "gh auth*": "ask"
+    }
+  }
+}
