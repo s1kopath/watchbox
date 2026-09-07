@@ -1,3 +1,5 @@
+import Icon from './Icon.jsx';
+
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
 export default function MovieCard({
@@ -21,7 +23,9 @@ export default function MovieCard({
         {posterPath ? (
           <img src={`${POSTER_BASE}${posterPath}`} alt={title} loading="lazy" />
         ) : (
-          <div className="movie-card__poster-placeholder">🎬</div>
+          <div className="movie-card__poster-placeholder">
+            <Icon name="film" size={30} />
+          </div>
         )}
       </div>
       <div className="movie-card__body">
@@ -29,7 +33,10 @@ export default function MovieCard({
           {title} {year && <span className="movie-card__year">({year})</span>}
         </h3>
         {typeof voteAverage === 'number' && voteAverage > 0 && (
-          <div className="movie-card__rating">⭐ {voteAverage.toFixed(1)}</div>
+          <div className="movie-card__rating">
+            <Icon name="star" size={14} filled className="movie-card__rating-star" />
+            {voteAverage.toFixed(1)}
+          </div>
         )}
         {overview && <p className="movie-card__overview">{overview}</p>}
 
@@ -39,7 +46,8 @@ export default function MovieCard({
               className={`chip ${status === 'want_to_watch' ? 'chip--active' : ''}`}
               onClick={onAddWant}
             >
-              🔖 Want to Watch
+              <Icon name="bookmark" size={15} />
+              Want to Watch
             </button>
           )}
           {onAddWatched && (
@@ -47,12 +55,14 @@ export default function MovieCard({
               className={`chip ${status === 'watched' ? 'chip--active' : ''}`}
               onClick={onAddWatched}
             >
-              ✅ Watched
+              <Icon name="check" size={15} />
+              Watched
             </button>
           )}
           {onRemove && (
             <button className="chip chip--danger" onClick={onRemove}>
-              🗑 Remove
+              <Icon name="trash" size={15} />
+              Remove
             </button>
           )}
         </div>
@@ -66,7 +76,7 @@ export default function MovieCard({
                 onClick={() => onRate(n === rating ? 0 : n)}
                 aria-label={`Rate ${n} stars`}
               >
-                {rating >= n ? '★' : '☆'}
+                <Icon name="star" size={20} filled={rating >= n} />
               </button>
             ))}
           </div>

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Form, Link, redirect, useActionData, useNavigation } from 'react-router';
 import { getDb, ensureSchema } from '../lib/db.server.js';
 import { createUserSession, getUser, isValidEmail } from '../lib/session.server.js';
+import Icon from '../components/Icon.jsx';
 
 export async function loader({ request }) {
   if (await getUser(request)) throw redirect('/');
@@ -52,7 +53,9 @@ export default function Register() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-logo">🎬</div>
+        <div className="auth-logo">
+          <Icon name="film" size={40} />
+        </div>
         <h1>MovieBox</h1>
         <p className="auth-subtitle">Create your account</p>
 

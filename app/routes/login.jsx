@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Form, Link, redirect, useActionData, useNavigation, useSearchParams } from 'react-router';
 import { getDb, ensureSchema } from '../lib/db.server.js';
 import { createUserSession, getUser, isValidEmail } from '../lib/session.server.js';
+import Icon from '../components/Icon.jsx';
 
 export async function loader({ request }) {
   // Already signed in? Skip the form.
@@ -49,7 +50,9 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-logo">🎬</div>
+        <div className="auth-logo">
+          <Icon name="film" size={40} />
+        </div>
         <h1>MovieBox</h1>
         <p className="auth-subtitle">Track what you've watched and what's next</p>
 

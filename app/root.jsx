@@ -8,6 +8,7 @@ import {
   isRouteErrorResponse,
   useRouteError,
 } from 'react-router';
+import Icon from './components/Icon.jsx';
 import stylesHref from './index.css?url';
 
 export const links = () => [{ rel: 'stylesheet', href: stylesHref }];
@@ -24,8 +25,9 @@ export function Layout({ children }) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="apple-touch-icon" href="/pwa-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <Meta />
         <Links />
       </head>
@@ -59,7 +61,9 @@ export function ErrorBoundary() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-logo">🎬</div>
+        <div className="auth-logo">
+          <Icon name="film" size={40} />
+        </div>
         <h1>MovieBox</h1>
         <p className="auth-error">{message}</p>
       </div>

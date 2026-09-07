@@ -114,8 +114,8 @@ input {
 }
 
 .bottom-nav__icon {
-  font-size: 1.25rem;
-  line-height: 1;
+  display: block;
+  margin: 0 auto 2px;
 }
 
 .bottom-nav__item.active {
@@ -179,8 +179,8 @@ input {
 }
 
 .movie-card__poster-placeholder {
-  font-size: 1.8rem;
-  opacity: 0.5;
+  color: var(--text-muted);
+  opacity: 0.6;
 }
 
 .movie-card__body {
@@ -200,9 +200,16 @@ input {
 }
 
 .movie-card__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 4px;
+}
+
+.movie-card__rating-star {
+  color: #ffce54;
 }
 
 .movie-card__overview {
@@ -222,6 +229,9 @@ input {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
@@ -248,13 +258,17 @@ input {
 }
 
 .star {
+  display: inline-flex;
   background: none;
   border: none;
-  font-size: 1.1rem;
-  color: #ffce54;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
   line-height: 1;
+}
+
+.star--filled {
+  color: #ffce54;
 }
 
 /* ---------- Auth screens ---------- */
@@ -275,7 +289,8 @@ input {
 }
 
 .auth-logo {
-  font-size: 2.5rem;
+  display: inline-flex;
+  color: var(--accent);
 }
 
 .auth-card h1 {
