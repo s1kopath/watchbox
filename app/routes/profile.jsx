@@ -32,6 +32,19 @@ export default function Profile() {
           Log Out
         </button>
       </Form>
+
+      <footer className="attribution">
+        <img
+          src="/tmdb-logo.svg"
+          alt="The Movie Database (TMDB)"
+          className="attribution__logo"
+          width="130"
+          height="17"
+        />
+        <p className="attribution__text">
+          This product uses the TMDB API but is not endorsed or certified by TMDB.
+        </p>
+      </footer>
     </div>
   );
 }
