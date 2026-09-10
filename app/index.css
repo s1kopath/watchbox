@@ -216,6 +216,21 @@ input {
   object-fit: cover;
 }
 
+.movie-card__poster-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.movie-card__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.movie-card__title-link:hover {
+  text-decoration: underline;
+}
+
 .movie-card__poster-placeholder {
   color: var(--text-muted);
   opacity: 0.6;
@@ -526,6 +541,200 @@ input {
   .skeleton::after {
     animation: none;
   }
+}
+
+/* ---------- Movie details page ---------- */
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 0;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.back-btn__chevron {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.trailer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2) center / cover no-repeat;
+  margin-bottom: 16px;
+}
+
+.trailer--facade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+.trailer--facade::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.trailer__play {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  padding-left: 3px; /* optical centering of the triangle */
+}
+
+.trailer__label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trailer__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.details-hero {
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.details-hero__img {
+  width: 100%;
+  display: block;
+}
+
+.details-head {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.details-poster {
+  width: 108px;
+  min-width: 108px;
+  border-radius: var(--radius);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.details-poster--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.details-title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.details-tagline {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.details-meta {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.details-stars {
+  margin-bottom: 16px;
+}
+
+.details-overview {
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+/* ---------- Cast strip ---------- */
+
+.cast__strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+}
+
+.cast__member {
+  width: 88px;
+  min-width: 88px;
+  scroll-snap-align: start;
+  text-align: center;
+}
+
+.cast__photo {
+  width: 88px;
+  height: 120px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+.cast__photo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.cast__name {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cast__character {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
 }
 
 /* ---------- TMDB attribution (kept less prominent than app branding) ---------- */

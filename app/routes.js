@@ -9,12 +9,13 @@ export default [
   // Resource route (action only) for list mutations, driven by fetchers
   route('lists', 'routes/lists.jsx'),
 
-  // Protected app shell — its loader requires a logged-in user and loads the
-  // user's movie entries once for all child pages.
+  // Protected app shell — its loader requires a logged-in user; each child
+  // page loads its own scoped, paginated data.
   layout('routes/app.jsx', [
     index('routes/search.jsx'),
     route('want-to-watch', 'routes/want-to-watch.jsx'),
     route('watched', 'routes/watched.jsx'),
+    route('movie/:id', 'routes/movie.jsx'),
     route('profile', 'routes/profile.jsx'),
   ]),
 ];

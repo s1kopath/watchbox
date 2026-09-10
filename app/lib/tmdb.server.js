@@ -61,3 +61,8 @@ export async function searchMovies(query, page = 1) {
 export async function trendingMovies() {
   return tmdb('/trending/movie/week');
 }
+
+// Full details for one movie plus its trailers and cast in a single request.
+export async function getMovieDetails(id) {
+  return tmdb(`/movie/${encodeURIComponent(id)}?append_to_response=videos,credits`);
+}

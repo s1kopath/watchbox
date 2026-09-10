@@ -170,6 +170,7 @@ function InfiniteList({ initialPage, status, q, sort, basePath }) {
             voteAverage={entry.vote_average}
             rating={entry.rating}
             status={entry.status}
+            linkTo={`/movie/${entry.tmdb_id}`}
             onRate={status === 'watched' ? (r) => rate(entry.id, r) : undefined}
             onAddWant={
               status === 'watched' ? () => addOrUpdate(toMovie(entry), 'want_to_watch') : undefined

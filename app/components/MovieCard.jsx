@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import Icon from './Icon.jsx';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -10,6 +11,7 @@ export default function MovieCard({
   voteAverage,
   rating,
   status,
+  linkTo,
   onAddWant,
   onAddWatched,
   onRate,
@@ -17,20 +19,35 @@ export default function MovieCard({
 }) {
   const year = releaseDate ? releaseDate.slice(0, 4) : '';
 
+  const poster = posterPath ? (
+    <img src={`${POSTER_BASE}${posterPath}`} alt={title} loading="lazy" />
+  ) : (
+    <div className="movie-card__poster-placeholder">
+      <Icon name="film" size={30} />
+    </div>
+  );
+
   return (
     <div className="movie-card">
       <div className="movie-card__poster">
-        {posterPath ? (
-          <img src={`${POSTER_BASE}${posterPath}`} alt={title} loading="lazy" />
+        {linkTo ? (
+          <Link to={linkTo} className="movie-card__poster-link" aria-label={title}>
+            {poster}
+          </Link>
         ) : (
-          <div className="movie-card__poster-placeholder">
-            <Icon name="film" size={30} />
-          </div>
+          poster
         )}
       </div>
       <div className="movie-card__body">
         <h3 className="movie-card__title">
-          {title} {year && <span className="movie-card__year">({year})</span>}
+          {linkTo ? (
+            <Link to={linkTo} className="movie-card__title-link">
+              {title}
+            </Link>
+          ) : (
+            title
+          )}{' '}
+          {year && <span className="movie-card__year">({year})</span>}
         </h3>
         {typeof voteAverage === 'number' && voteAverage > 0 && (
           <div className="movie-card__rating">

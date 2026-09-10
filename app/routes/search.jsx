@@ -118,6 +118,7 @@ function SearchResults({ results, statuses }) {
             overview={movie.overview}
             voteAverage={movie.vote_average}
             status={existing?.status}
+            linkTo={`/movie/${movie.id}`}
             onAddWant={() => addOrUpdate(movie, 'want_to_watch')}
             onAddWatched={() => addOrUpdate(movie, 'watched')}
           />

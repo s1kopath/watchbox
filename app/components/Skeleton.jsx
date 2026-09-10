@@ -29,6 +29,29 @@ export function MovieListSkeleton({ count = 6 }) {
   );
 }
 
+export function MovieDetailsSkeleton() {
+  return (
+    <div aria-hidden="true" aria-busy="true">
+      <div className="skeleton trailer" />
+      <div className="details-head">
+        <div className="skeleton details-poster" />
+        <div className="details-headline">
+          <div className="skeleton skeleton-line skeleton-line--title" />
+          <div className="skeleton skeleton-line skeleton-line--sm" />
+          <div className="skeleton skeleton-line skeleton-line--short" />
+        </div>
+      </div>
+      <div className="skeleton-actions">
+        <div className="skeleton skeleton-chip" />
+        <div className="skeleton skeleton-chip" />
+      </div>
+      <div className="skeleton skeleton-line" />
+      <div className="skeleton skeleton-line" />
+      <div className="skeleton skeleton-line skeleton-line--short" />
+    </div>
+  );
+}
+
 export function ProfileStatsSkeleton() {
   return (
     <div className="profile-stats" aria-hidden="true" aria-busy="true">
