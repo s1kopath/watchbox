@@ -19,12 +19,17 @@ is enough.
    with `JWT_SECRET`. Read it in loaders via `requireUser(request)` (throws a
    redirect to `/login` when signed out) or `getUser(request)`. Never trust a
    client value for identity. No localStorage, no JWT-in-JS.
-3. **Reads flow down, writes flow through `/lists`.** The protected layout
-   `app/routes/app.jsx` loads the user + all their entries once; child pages
-   read that with `useRouteLoaderData('routes/app')`. Mutations POST to the
-   `app/routes/lists.jsx` action via the `useListActions()` hook; React Router
-   then **auto-revalidates** the loader, so the UI refreshes with no manual
-   state. There is no client-side store/context.
+3. **Each page loads its own scoped slice; writes flow through `/lists`.** The
+   protected layout `app/routes/app.jsx` loads only the **user** (identity, no
+   DB). Every page owns its data via its own `loader` — the lists are
+   **paginated** (`getEntriesPage`, keyset/offset), Profile uses `getCounts`,
+   Search looks up status for just the visible results (`getStatusFor`). Loaders
+   **stream** their data (return the promise un-awaited) so pages render
+   instantly with `<Suspense>`/`<Await>` skeletons. Mutations POST to the
+   `app/routes/lists.jsx` action via `useListActions()`; React Router
+   **auto-revalidates** the active loaders, and `useOptimisticEntries` reflects
+   the change instantly in the meantime. There is no client-side store/context —
+   the app's cost no longer grows with library size.
 4. **Secrets stay server-side.** DB, session, and TMDB key are only touched in
    `*.server.js` / loaders / actions — never in a component render path.
 
@@ -32,13 +37,14 @@ is enough.
 
 ```
 app/routes/       login, register, logout, lists(action-only), app(protected layout),
-                  search(index "/"), watched, want-to-watch, profile
-app/lib/          db.server, session.server, tmdb.server, lists.server (DB ops),
-                  useListActions.js (client mutation hook)
-app/components/   MovieCard, BottomNav, EntryList
+                  search(index "/"), watched, want-to-watch, movie/:id(details), profile
+app/lib/          db.server, session.server, tmdb.server (search/trending/details + TTL cache),
+                  lists.server (paginated DB ops), useListActions.js (mutations + optimistic hook)
+app/components/   MovieCard, BottomNav, EntryList (paginated + infinite scroll + in-list
+                  search/sort), Skeleton, Icon (inline SVG set)
 app/root.jsx      HTML shell + service-worker registration + ErrorBoundary
 app/routes.js     route table (explicit config)
-public/           manifest.webmanifest, sw.js, generated *.png icons
+public/           manifest.webmanifest, sw.js, tmdb-logo.svg, generated *.png icons
 ```
 
 ## Commands
@@ -67,7 +73,8 @@ public/           manifest.webmanifest, sw.js, generated *.png icons
 - **Never commit automatically.** Make and verify changes, then stop and let
   the user review. Only run `git commit` when the user explicitly asks (e.g.
   "commit this"). Same for staging intent — don't commit as a side effect of
-  finishing a task.
+  finishing a task. A "yes" that approves the *work* (e.g. "yes, add that") is
+  NOT approval to commit — wait for an explicit commit request.
 - **Do not** `git push`, deploy (`vercel --prod` / `vercel deploy`), or run any
   account login/link (`vercel login`, `turso auth …`, `gh auth …`) without the
   user explicitly asking. (Also codified in `opencode.json`.)
@@ -75,9 +82,12 @@ public/           manifest.webmanifest, sw.js, generated *.png icons
   `JWT_SECRET`) — they're the user's real accounts. `.env` is gitignored; only
   `.env.example` (placeholders) is tracked.
 - New protected page → add it under the `app.jsx` layout in `app/routes.js` so
-  it inherits the auth guard + entries loader.
+  it inherits the auth guard; give it its own `loader` for the data it needs.
 - List mutation from the UI → use `useListActions()`; don't hand-roll fetches.
 - Keep DB/session/secret access in `*.server.js` / loaders / actions only.
+- **Keep the docs in sync.** When you change architecture, data flow, routes,
+  the data model, commands, or conventions, update `CLAUDE.md` **and**
+  `AGENTS.md` in the same change so they never drift from the code.
 
 ## Gotchas
 
@@ -88,3 +98,9 @@ public/           manifest.webmanifest, sw.js, generated *.png icons
   `vite.config.js`. On Vercel it comes from project env vars.
 - PWA: `public/sw.js` gives installability + poster caching only; the SSR app
   shell is **not** precached (full offline is a known follow-up).
+- **Lists are paginated with keyset infinite scroll** (`getEntriesPage`). After
+  a mutation the list revalidates and resets to page 1 — a deliberate tradeoff
+  to avoid stale deep pages; optimistic UI keeps the action itself instant.
+- **TMDB terms**: show the attribution (Profile footer) + logo, don't persist
+  TMDB data long-term (details are fetched live per view, cached ~5 min in
+  `tmdb.server.js`), non-commercial only. See the terms notes in AGENTS.md.

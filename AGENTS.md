@@ -37,31 +37,37 @@ app/
   routes.js              route table (explicit config, not file-based)
   index.css              all styling (plain CSS)
   lib/
-    db.server.js         Turso client singleton + ensureSchema()
+    db.server.js         Turso client singleton + ensureSchema() (tables + list index)
     session.server.js    cookie session: getUser/requireUser/createUserSession/logout, isValidEmail
-    tmdb.server.js       searchMovies() / trendingMovies()
-    lists.server.js      getEntries/addOrUpdateEntry/patchEntry/removeEntry (DB ops)
-    useListActions.js    client hook: fetcher posting to /lists (add/rate/remove)
+    tmdb.server.js       searchMovies/trendingMovies/getMovieDetails + short-lived response cache
+    lists.server.js      addOrUpdateEntry/patchEntry/removeEntry + paginated reads
+                         (getEntriesPage keyset/offset, getCounts, getStatusFor)
+    useListActions.js    client hooks: useListActions (fetcher → /lists) + useOptimisticEntries
   routes/
     login.jsx            loader (redirect if signed in) + action (bcrypt check, set cookie)
     register.jsx         loader + action (create user, set cookie)
     logout.jsx           action (destroy cookie) — POSTed from Profile
     lists.jsx            action-only resource route: add/rate/remove entries
-    app.jsx              PROTECTED LAYOUT: loader = requireUser + getEntries;
-                         renders app-shell + BottomNav + <Outlet>. Its loader
-                         data (user, entries) is shared by all child pages.
-    search.jsx           index route "/": loader does TMDB search(?q=)/trending
-    want-to-watch.jsx    thin wrapper around components/EntryList status=want_to_watch
-    watched.jsx          thin wrapper around components/EntryList status=watched
-    profile.jsx          reads app-layout loader data; logout Form
+    app.jsx              PROTECTED LAYOUT: loader = requireUser only (identity, no DB);
+                         renders app-shell + BottomNav + <Outlet>. shouldRevalidate=false.
+    search.jsx           index route "/": loader streams TMDB search(?q=)/trending +
+                         getStatusFor for the visible results
+    want-to-watch.jsx    loader = getEntriesPage(status=want_to_watch); renders EntryList
+    watched.jsx          loader = getEntriesPage(status=watched); renders EntryList
+    movie.jsx            "movie/:id" details: streams getMovieDetails + status; trailer/cast
+    profile.jsx          own loader = getCounts; user from app-layout; logout Form
   components/
-    MovieCard.jsx        shared card for search results AND list items (callback-based, unchanged)
+    MovieCard.jsx        shared card for search results AND list items (poster/title link to details)
     BottomNav.jsx        mobile-style bottom tab bar
-    EntryList.jsx        renders watched/want-to-watch list from app-layout loader data
+    EntryList.jsx        paginated list: streaming skeleton, infinite scroll (IntersectionObserver
+                         + fetcher), in-list title search + sort, optimistic overlay
+    Skeleton.jsx         shimmer loading placeholders (card/list/profile/details)
+    Icon.jsx             dependency-free inline SVG icon set (currentColor)
 
 public/
   manifest.webmanifest   PWA manifest (static)
   sw.js                  service worker: installability + TMDB poster caching
+  tmdb-logo.svg          official TMDB attribution logo (shown on Profile)
   *.png                  generated app icons
 
 react-router.config.js   { ssr: true, presets: [vercelPreset()] }
@@ -71,15 +77,32 @@ scripts/                 generate-icons.mjs + icon-source.svg (icon regeneration
 
 ## How data flows (important)
 
-- **Reading**: the `app.jsx` layout loader loads the user + all their
-  `movie_entries` once. Child pages (search, watched, want-to-watch, profile)
-  read that via `useRouteLoaderData('routes/app')` — they do NOT fetch it
-  themselves. Search additionally has its own loader for TMDB results.
+- **Reading (per-page, scoped, paginated)**: the `app.jsx` layout loader loads
+  only the **user** (identity from the cookie — no DB). Each page owns its data
+  via its own `loader`:
+  - `watched` / `want-to-watch` → `getEntriesPage(userId, {status, q, sort,
+    cursor})` — one page (24) at a time. Recency uses **keyset** pagination on
+    `(added_at, id)`; the optional rating/title sorts use offset. `EntryList`
+    does infinite scroll (an `IntersectionObserver` sentinel fires a
+    `useFetcher().load('?cursor=…')`) and offers in-list title search + sort.
+  - `profile` → `getCounts` (a `COUNT(*) GROUP BY status`, not row loading).
+  - `search` → streams TMDB results + `getStatusFor(userId, visibleIds)` for
+    just the ~20 shown movies.
+  - `movie/:id` → streams `getMovieDetails` + `getStatusFor` for the one movie.
+  - No page loads the whole library, so cost is flat as the library grows.
+- **Streaming + skeletons**: loaders return their data as an **un-awaited
+  promise**; routes render immediately and show `<Suspense>`/`<Await>`
+  skeletons (`components/Skeleton.jsx`) until it resolves.
 - **Writing**: mutations go through the `/lists` resource route action via the
   `useListActions()` hook (a `useFetcher`). After the action runs, React Router
-  **automatically revalidates the layout loader**, so lists refresh with no
-  manual state management. There is no client-side list cache/context any more
-  (the old `ListsContext`/`AuthContext`/`src/api/client.js` are gone).
+  **auto-revalidates the active loaders**; `useOptimisticEntries` overlays the
+  in-flight change so the UI updates instantly in the meantime. There is no
+  client-side list cache/context (the old `ListsContext`/`AuthContext`/
+  `src/api/client.js` are gone).
+- **Revalidation control**: `app.jsx` `shouldRevalidate=false` (identity is
+  fixed for the session); `search.jsx` re-runs only on `?q=` change or after a
+  mutation (badges) — TMDB is served from the `tmdb.server.js` cache so that
+  costs no network.
 - **Auth guard**: `requireUser(request)` in a loader throws a redirect to
   `/login?redirectTo=…` when the session cookie is missing. `app.jsx` guards
   every page under it.
@@ -94,7 +117,9 @@ Single table `movie_entries` (see `app/lib/db.server.js` for the exact DDL):
 - `status` is `'watched'` or `'want_to_watch'` (CHECK constraint).
 - `watched_at` is set when status becomes `'watched'`, cleared otherwise.
 - `rating` (1–5) only makes sense for watched entries; the UI only shows stars
-  on the Watched tab.
+  on the Watched and details pages.
+- Index `idx_entries_user_status_added (user_id, status, added_at DESC, id DESC)`
+  serves the paginated list query (filter by user+status, order by recency).
 
 ## Environment variables
 
@@ -110,6 +135,7 @@ these come from the project's environment variables.
 | ------------------ | ------------------------------------------------------------------- |
 | `npm install`      | install deps                                                        |
 | `npm run dev`      | **single** dev server (SSR + HMR) — frontend and loaders/actions together |
+| `npm test`         | **offline** smoke test of the server layer (SQLite temp file, no network) |
 | `npm run build`    | `react-router build` — client + server bundles                      |
 | `npm start`        | serve the production build locally (`react-router-serve`)           |
 | `npm run typegen`  | generate route types into `.react-router/`                          |
@@ -126,21 +152,31 @@ proxy, and no `scripts/dev-server.mjs` any more.
   suffix — don't import them from a component render path.
 - **New pages**: add the file under `app/routes/`, register it in
   `app/routes.js`. Protected pages go inside the `app.jsx` layout children so
-  they inherit the auth guard + entries loader.
+  they inherit the auth guard; give each its own `loader` for the data it needs.
 - **List mutations from the UI**: use `useListActions()` — don't hand-roll
   fetches. Adding/rating/removing all POST to the `/lists` action, which
-  triggers loader revalidation.
+  triggers loader revalidation. For instant feedback overlay pending changes
+  with `useOptimisticEntries`.
+- **Loaders should stream** (return an un-awaited promise) and be consumed with
+  `<Suspense>` + `<Await>` and a skeleton from `components/Skeleton.jsx`, so the
+  page never blocks on the network before rendering.
 - **Auth in a loader/action**: `requireUser(request)` (throws redirect) or
   `getUser(request)` (returns null). Never trust a client value for identity.
 - **Icons** in `public/*.png` are generated. To change them, edit
   `scripts/icon-source.svg`, then
-  `npm install -D sharp && node scripts/generate-icons.mjs && npm uninstall sharp`.
+  `npm install --no-save sharp && node scripts/generate-icons.mjs`. In-app UI
+  icons are inline SVG in `components/Icon.jsx` (add a new entry to its map).
+- **TMDB terms**: attribution + logo are shown on Profile (`public/tmdb-logo.svg`);
+  movie/details data is fetched live per view (cached ~5 min), never persisted
+  long-term; usage is non-commercial only.
 
 ## Rules for agents working in this repo
 
 - **Never commit automatically.** Do the work, verify it, then stop and let the
   user review. Only run `git commit` when the user explicitly asks for it — do
-  not commit as a side effect of completing a task.
+  not commit as a side effect of completing a task. Approving the *work* (a
+  "yes" to a proposed change) is NOT approval to commit; wait for an explicit
+  commit request.
 - Never run commands that log into or link third-party accounts (`vercel
   login`, `vercel link`, `turso auth login`, `gh auth login`, etc.) without the
   user explicitly asking. (Codified in `opencode.json` as `"ask"`.)
@@ -148,13 +184,18 @@ proxy, and no `scripts/dev-server.mjs` any more.
   explicit request. (Also `"ask"` in `opencode.json`.)
 - Don't commit `.env` (gitignored) — only `.env.example`, with placeholder
   values only.
+- **Keep the docs current.** Whenever a change touches architecture, data flow,
+  routes, the data model, commands, or conventions, update `AGENTS.md` **and**
+  `CLAUDE.md` in the same change so the docs never lag the code.
 
 ## Status
 
 Migrated from the original React SPA + Vercel serverless `/api` layout to
 React Router v7 framework mode (httpOnly cookie auth, server loaders/actions).
-**Not yet deployed** — deployment needs the user's own TMDB key, Turso
-database, and Vercel account/login, documented in `README.md`.
+Lists are paginated with streaming skeletons, optimistic UI, in-list
+search/sort, and a movie details page (trailer + cast). **Not yet deployed** —
+deployment needs the user's own TMDB key, Turso database, and Vercel
+account/login, documented in `README.md`.
 
 ## Known gaps / possible follow-up work
 
@@ -162,6 +203,9 @@ database, and Vercel account/login, documented in `README.md`.
   only. It does NOT precache the server-rendered app shell, so full offline
   navigation isn't supported. Doing that properly needs build-time asset
   manifest injection (Workbox) wired into the SSR build.
-- No dedicated movie detail page/route.
 - No password reset flow.
-- No pagination UI for search results (loader requests page 1 only).
+- Infinite-scroll lists reset to page 1 after a mutation (deliberate; see the
+  data-flow notes) — a smarter in-place merge could preserve deep scroll.
+- No error toast when a list mutation fails on the server (optimistic change
+  just reverts on revalidation).
+- Search results themselves aren't paginated (TMDB page 1 only).
