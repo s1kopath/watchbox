@@ -28,9 +28,15 @@ process.env.JWT_SECRET = 'smoke-test-secret';
 process.env.TMDB_API_KEY = 'not-used-in-this-test';
 cleanup();
 
-const { getEntries, addOrUpdateEntry, patchEntry, removeEntry } = await import(
-  '../app/lib/lists.server.js'
-);
+const {
+  getEntries,
+  addOrUpdateEntry,
+  patchEntry,
+  removeEntry,
+  getEntriesPage,
+  getCounts,
+  getStatusFor,
+} = await import('../app/lib/lists.server.js');
 const { createUserSession, getUser, isValidEmail } = await import('../app/lib/session.server.js');
 const { getDb, ensureSchema } = await import('../app/lib/db.server.js');
 
@@ -70,6 +76,54 @@ try {
 
   await addOrUpdateEntry(2, { tmdb_id: 1, title: 'Other', status: 'watched' });
   assert((await getEntries(USER)).length === 0, 'entries are scoped per user');
+
+  // --- pagination / counts / status lookup / search / sort ---
+  const seed = [
+    [100, 'Alpha'],
+    [101, 'Beta'],
+    [102, 'Gamma'],
+    [103, 'Delta'],
+    [104, 'Alfa'],
+  ];
+  for (const [tmdb_id, title] of seed) {
+    await addOrUpdateEntry(USER, { tmdb_id, title, status: 'want_to_watch' });
+  }
+
+  const counts = await getCounts(USER);
+  assert(counts.want_to_watch === 5 && counts.watched === 0 && counts.total === 5, 'getCounts tallies per status');
+
+  // Keyset paging in pages of 2 — the seeds share an added_at second, so this
+  // also proves the (added_at, id) tiebreak yields no dupes / no skips.
+  let cursor = null;
+  const seen = [];
+  let pages = 0;
+  do {
+    const page = await getEntriesPage(USER, { status: 'want_to_watch', limit: 2, cursor });
+    seen.push(...page.items.map((r) => r.id));
+    cursor = page.nextCursor;
+    pages++;
+  } while (cursor && pages < 10);
+  assert(seen.length === 5 && new Set(seen).size === 5 && pages === 3, 'keyset pagination walks all rows once');
+
+  const found = await getEntriesPage(USER, { status: 'want_to_watch', q: 'Al' });
+  assert(found.items.length === 2, 'in-list title search filters (Alpha, Alfa)');
+
+  const byTitle = await getEntriesPage(USER, { status: 'want_to_watch', sort: 'title' });
+  assert(byTitle.items[0].title === 'Alfa', 'title sort orders A→Z');
+
+  const statusMap = await getStatusFor(USER, [100, 999]);
+  assert(statusMap[100]?.status === 'want_to_watch' && !statusMap[999], 'getStatusFor maps only known tmdb ids');
+
+  const alphaId = statusMap[100].id;
+  await patchEntry(USER, alphaId, { rating: 5 });
+  const byRating = await getEntriesPage(USER, { status: 'want_to_watch', sort: 'rating' });
+  assert(byRating.items[0].tmdb_id === 100, 'rating sort puts the highest first');
+
+  // Reset USER's list so later assertions about emptiness are unaffected.
+  for (const [tmdb_id] of seed) {
+    await removeEntry(USER, statusMap[tmdb_id]?.id ?? (await getStatusFor(USER, [tmdb_id]))[tmdb_id]?.id);
+  }
+  assert((await getCounts(USER)).total === 0, 'cleanup empties the seeded list');
 
   // --- validation ---
   assert(isValidEmail('a@b.co') && !isValidEmail('nope'), 'isValidEmail validates');

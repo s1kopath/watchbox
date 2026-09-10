@@ -1,9 +1,18 @@
-import { Form, useRouteLoaderData } from 'react-router';
+import { Suspense } from 'react';
+import { Await, Form, useLoaderData, useRouteLoaderData } from 'react-router';
+import { requireUser } from '../lib/session.server.js';
+import { getCounts } from '../lib/lists.server.js';
+import { ProfileStatsSkeleton } from '../components/Skeleton.jsx';
+
+export async function loader({ request }) {
+  const user = await requireUser(request);
+  // Counts come from a cheap COUNT(*) GROUP BY, not by loading every row.
+  return { counts: getCounts(user.id) };
+}
 
 export default function Profile() {
-  const { user, entries } = useRouteLoaderData('routes/app');
-  const watched = entries.filter((e) => e.status === 'watched');
-  const wantToWatch = entries.filter((e) => e.status === 'want_to_watch');
+  const { user } = useRouteLoaderData('routes/app');
+  const { counts } = useLoaderData();
 
   return (
     <div className="screen">
@@ -16,16 +25,9 @@ export default function Profile() {
         <p className="profile-email">{user?.email}</p>
       </div>
 
-      <div className="profile-stats">
-        <div className="profile-stat">
-          <span className="profile-stat__value">{watched.length}</span>
-          <span className="profile-stat__label">Watched</span>
-        </div>
-        <div className="profile-stat">
-          <span className="profile-stat__value">{wantToWatch.length}</span>
-          <span className="profile-stat__label">Want to Watch</span>
-        </div>
-      </div>
+      <Suspense fallback={<ProfileStatsSkeleton />}>
+        <Await resolve={counts}>{(resolved) => <ProfileStats counts={resolved} />}</Await>
+      </Suspense>
 
       <Form method="post" action="/logout">
         <button type="submit" className="btn btn--danger">
@@ -45,6 +47,21 @@ export default function Profile() {
           This product uses the TMDB API but is not endorsed or certified by TMDB.
         </p>
       </footer>
+    </div>
+  );
+}
+
+function ProfileStats({ counts }) {
+  return (
+    <div className="profile-stats">
+      <div className="profile-stat">
+        <span className="profile-stat__value">{counts.watched}</span>
+        <span className="profile-stat__label">Watched</span>
+      </div>
+      <div className="profile-stat">
+        <span className="profile-stat__value">{counts.want_to_watch}</span>
+        <span className="profile-stat__label">Want to Watch</span>
+      </div>
     </div>
   );
 }

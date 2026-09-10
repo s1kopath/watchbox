@@ -143,6 +143,44 @@ input {
   border-color: var(--accent);
 }
 
+/* ---------- List controls (search within list + sort) ---------- */
+
+.list-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.list-controls__search {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.list-controls__search:focus {
+  border-color: var(--accent);
+}
+
+.list-controls__sort {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.load-more {
+  min-height: 1px;
+}
+
 /* ---------- Movie list / cards ---------- */
 
 .movie-list {
@@ -416,6 +454,78 @@ input {
 .profile-stat__label {
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+/* ---------- Skeleton loaders ---------- */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.skeleton-line--title {
+  height: 16px;
+  width: 60%;
+}
+
+.skeleton-line--sm {
+  width: 30%;
+}
+
+.skeleton-line--short {
+  width: 80%;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.skeleton-chip {
+  height: 26px;
+  width: 104px;
+  border-radius: 999px;
+}
+
+.skeleton-stat {
+  height: 34px;
+  width: 48px;
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
 }
 
 /* ---------- TMDB attribution (kept less prominent than app branding) ---------- */

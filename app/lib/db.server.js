@@ -46,6 +46,12 @@ export async function ensureSchema() {
         UNIQUE(user_id, tmdb_id)
       )
     `);
+    // Serves the paginated list query: filter by (user_id, status), order by
+    // added_at DESC. Without it SQLite sorts the whole per-user set every page.
+    await db.execute(`
+      CREATE INDEX IF NOT EXISTS idx_entries_user_status_added
+        ON movie_entries (user_id, status, added_at DESC, id DESC)
+    `);
   })();
   return schemaReady;
 }
